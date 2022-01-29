@@ -1,7 +1,7 @@
 import React from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import styled from "styled-components";
-import { auth } from "../../firebase";
+import { auth } from "../../../firebase";
 import moment from 'moment';
 const Message = ({ author, message, timestamp }) => {
   const [userLoggedIn] = useAuthState(auth);
