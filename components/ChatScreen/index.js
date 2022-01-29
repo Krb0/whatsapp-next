@@ -7,17 +7,7 @@ import styled from "styled-components";
 import getRecipientEmail from "../../utils/getRecipientEmail";
 import { v4 as uuid } from "uuid";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db, messagesQuery } from "../../firebase";
-import {
-  serverTimestamp,
-  collection,
-  query,
-  orderBy,
-  setDoc,
-  addDoc,
-  where,
-  doc,
-} from "firebase/firestore";
+import { auth, getMessages, getRecipient, sendMessage } from "../../firebase";
 import { useCollection } from "react-firebase-hooks/firestore";
 // Import materialUI stuff
 import { Avatar } from "@mui/material";
@@ -26,7 +16,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import IconButton from "@mui/material/IconButton";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import MicIcon from "@mui/icons-material/Mic";
-
+import scrollTo from './utils/scrollTo'
 import TimeAgo from 'timeago-react';
 
 
@@ -38,40 +28,19 @@ const ChatScreen = ({ users, messages }) => {
   const [user] = useAuthState(auth);
   const endOfMessageRef = useRef(null)
 
-  const [messagesSnapshot] = useCollection(messagesQuery);
+  const [messagesSnapshot] = useCollection(getMessages(id));
   const recipientEmail = getRecipientEmail(users, user);
-  const letterCount = input.length;
   const showMessages = () => {
     const filteredMessage = messagesSnapshot.docs.map((doc) => {return {message: doc.data().message, timestamp: doc.data().timestamp, author: doc.data().user}});
     return filteredMessage;
   };
-  const usersCollection = collection(db, "users");
-  const [recipientQuery] = useCollection(
-    query(
-      usersCollection,
-      where("email", "==", recipientEmail)
-    ))
+
+  const [recipientSnapshot] = useCollection(getRecipient(recipientEmail))
   
-  const recipient = recipientQuery?.docs?.[0]?.data();
-  const scollToBottom = () => {
-    endOfMessageRef.current.scrollIntoView({behavior: "smooth", block: "start"})
-  }
-  useEffect(() => {scollToBottom()}, [messagesSnapshot])
-  const sendMessage = (e) => {
-    e.preventDefault();
-    const userRef = doc(db, "users", user.uid);
-    const chatRef = collection(db, `chats/${id}/messages`);
-    setDoc(userRef, { lastSeen: serverTimestamp() }, { merge: true });
-    addDoc(chatRef, {
-      timestamp: serverTimestamp(),
-      message: input,
-      user: user.email,
-      photoURL: user.photoURL,
-    });
-    
-    setInput("");
-    scollToBottom();
-  };
+  const recipient = recipientSnapshot?.docs?.[0]?.data();
+
+  useEffect(() => {scrollTo(endOfMessageRef)}, [messagesSnapshot])
+  
   return (
     <Container>
       <Header>
@@ -83,7 +52,7 @@ const ChatScreen = ({ users, messages }) => {
 
         <HeaderInformation>
           <h3>{recipientEmail}</h3>
-          {recipientQuery ? (
+          {recipientSnapshot ? (
             <p>
               Last Seen:{" "}
               {recipient?.lastSeen?.toDate() ? (
@@ -128,10 +97,10 @@ const ChatScreen = ({ users, messages }) => {
           maxLength={250}
           onChange={(e) => setInput(e.target.value)}
         />
-        <button hidden disabled={!input} type="submit" onClick={sendMessage}>
+        <button hidden disabled={!input} type="submit" onClick={(e) => {sendMessage(e, id, user, input, setInput)}}>
           Send Message
         </button>
-        <span>{letterCount ? letterCount : 0} / 250</span>
+        <span>{input.length ? input.length : 0} / 250</span>
         <IconButton>
           <MicIcon />
         </IconButton>
