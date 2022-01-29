@@ -7,7 +7,7 @@ import TimeAgo from "timeago-react";
 import ChatHeaderIcons from "./ChatHeaderIcons";
 import { useCollection } from "react-firebase-hooks/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-const index = ({ users }) => {
+const ChatHeader = ({ users }) => {
   const [user] = useAuthState(auth);
   const recipientEmail = getRecipientEmail(users, user);
   const [recipientSnapshot] = useCollection(getRecipient(recipientEmail));
@@ -40,9 +40,10 @@ const index = ({ users }) => {
   );
 };
 
-export default index;
+export default ChatHeader;
 
 const Header = styled.div`
+  border-radius: 6px;
   position: sticky;
   background-color: white;
   z-index: 100;

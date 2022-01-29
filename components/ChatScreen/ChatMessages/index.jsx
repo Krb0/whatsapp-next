@@ -18,7 +18,7 @@ const ChatMessages = ({ id }) => {
     <MessageContainer>
       {messagesSnapshot ? (
         showMessages(messagesSnapshot).map((msg) => (
-          <Message {...msg} timestamp={msg?.timestamp?.toDate()} key={id} />
+          <Message {...msg} timestamp={msg?.timestamp?.toDate()} key={uuid()} />
         ))
       ) : (
         <Loading />

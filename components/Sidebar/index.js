@@ -1,61 +1,24 @@
 import React, { useState } from "react";
+import styled from "styled-components";
 import { getAuth } from "firebase/auth";
-import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollection } from "react-firebase-hooks/firestore";
+import { getChats } from "../../firebase";
+import SidebarButton from "./SidebarButton";
 import ChatListItem from "./ChatListItem";
-import styled from "styled-components";
 import SidebarHeader from "./SidebarHeader";
-import Button from "@mui/material/Button";
-import SearchIcon from "@mui/icons-material/Search";
-import * as EmailValidator from "email-validator";
+import SidebarSearch from "./SidebarSearch";
+
 const Sidebar = () => {
   const [user] = useAuthState(getAuth());
   const [search, setSearch] = useState("");
-  const chatCollectionRef = collection(db, "chats");
-  const filteredChats = query(
-    chatCollectionRef,
-    where("users", "array-contains", user?.email)
-  );
-  const [chatsSnapshot] = useCollection(filteredChats);
-  const createChat = async () => {
-    const input = prompt(
-      "Please enter an email address for the user you wish to chat with"
-    );
-    if (!input) return;
-    if (
-      EmailValidator.validate(input) &&
-      input !== user.email &&
-      !(await chatAlreadyExists(input))
-    ) {
-      addDoc(collection(db, "chats"), { users: [user.email, input] });
-    } else {
-      alert("Email already exists");
-    }
-  };
-  const chatAlreadyExists = async (recipientEmail) => {
-    const docsSnapshot = await getDocs(filteredChats);
+  const [chatsSnapshot] = useCollection(getChats(user));
 
-    const foundDoc = docsSnapshot.docs.find((doc) =>
-      doc.data().users.includes(recipientEmail)
-    );
-    if (foundDoc) return true;
-    else return false;
-  };
   return (
     <Container>
       <SidebarHeader user={user} />
-      <Search>
-        <SearchIcon />
-        <SearchInput
-          placeholder="Search in chats"
-          onChange={(e) => {
-            setSearch(e.target.value);
-          }}
-        />
-      </Search>
-      <SidebarButton onClick={createChat}>Start a new chat</SidebarButton>
+      <SidebarSearch setSearch={setSearch} />
+      <SidebarButton user={user} />
       {chatsSnapshot?.docs
         .filter((chat) =>
           chat
@@ -86,25 +49,4 @@ const Container = styled.div`
   }
   --ms-overflow-style: none;
   scrollbar-width: none;
-`;
-
-const Search = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border-radius: 2px;
-`;
-const SearchInput = styled.input`
-  border: none;
-  outline-width: 0;
-  flex: 1;
-`;
-const SidebarButton = styled(Button)`
-  width: 100%;
-  font-weight: 600;
-  color: #242424;
-  &&& {
-    border-top: 1px solid whitesmoke;
-    border-bottom: 1px solid whitesmoke;
-  }
 `;
