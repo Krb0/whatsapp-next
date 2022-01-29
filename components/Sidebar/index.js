@@ -1,20 +1,18 @@
-import React from "react";
-import { getAuth, signOut } from "firebase/auth";
+import React, { useState } from "react";
+import { getAuth } from "firebase/auth";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useCollection } from "react-firebase-hooks/firestore";
 import ChatListItem from "./ChatListItem";
 import styled from "styled-components";
-import Avatar from "@mui/material/Avatar";
+import SidebarHeader from "./SidebarHeader";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import ChatIcon from "@mui/icons-material/Chat";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import SearchIcon from "@mui/icons-material/Search";
 import * as EmailValidator from "email-validator";
 const Sidebar = () => {
   const [user] = useAuthState(getAuth());
+  const [search, setSearch] = useState("");
   const chatCollectionRef = collection(db, "chats");
   const filteredChats = query(
     chatCollectionRef,
@@ -47,31 +45,28 @@ const Sidebar = () => {
   };
   return (
     <Container>
-      <Header>
-        <UserAvatar
-          src={user.photoURL}
-          onClick={() => {
-            const auth = getAuth();
-            signOut(auth);
-          }}
-        />
-        <IconsContainer>
-          <IconButton>
-            <ChatIcon />
-          </IconButton>
-          <IconButton>
-            <MoreVertIcon />
-          </IconButton>
-        </IconsContainer>
-      </Header>
+      <SidebarHeader user={user} />
       <Search>
         <SearchIcon />
-        <SearchInput placeholder="Search in chats" />
+        <SearchInput
+          placeholder="Search in chats"
+          onChange={(e) => {
+            setSearch(e.target.value);
+          }}
+        />
       </Search>
       <SidebarButton onClick={createChat}>Start a new chat</SidebarButton>
-      {chatsSnapshot?.docs.map((chat) => (
-        <ChatListItem key={chat.id} id={chat.id} users={chat.data().users} />
-      ))}
+      {chatsSnapshot?.docs
+        .filter((chat) =>
+          chat
+            .data()
+            .users.some((user) =>
+              user.toLowerCase().startsWith(search.toLowerCase())
+            )
+        )
+        .map((chat) => (
+          <ChatListItem key={chat.id} id={chat.id} users={chat.data().users} />
+        ))}
     </Container>
   );
 };
@@ -113,25 +108,3 @@ const SidebarButton = styled(Button)`
     border-bottom: 1px solid whitesmoke;
   }
 `;
-
-const Header = styled.div`
-  display: flex;
-  position: sticky;
-  top: 0;
-  background-color: white;
-  z-index: 1;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  height: 80px;
-  border-bottom: 1px solid whitesmoke;
-`;
-
-const UserAvatar = styled(Avatar)`
-  cursor: pointer;
-  :hover {
-    opacity: 0.85;
-  }
-`;
-
-const IconsContainer = styled.div``;
