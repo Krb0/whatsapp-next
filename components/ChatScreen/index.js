@@ -23,7 +23,7 @@ import getRecipientEmail from "../../utils/getRecipientEmail";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import MicIcon from "@mui/icons-material/Mic";
 import Message from "./Message";
-import { convertTimestamp } from "convert-firebase-timestamp-3";
+import { serverTimestamp } from "firebase/firestore";
 
 const ChatScreen = ({ users, messages }) => {
   const [input, setInput] = useState("");
@@ -39,17 +39,8 @@ const ChatScreen = ({ users, messages }) => {
   const recipientEmail = getRecipientEmail(users, user);
   const letterCount = input.length;
   const showMessages = () => {
-    const parsedMSG = JSON.parse(messages);
-    console.log(
- 
-    );
-    return parsedMSG.sort((a, b) => {
-      return (
-        a.timestamp.seconds +
-        a.timestamp.nanoseconds -
-        (b.timestamp.seconds + b.timestamp.nanoseconds)
-      );
-    });
+    const filteredMessage = messagesSnapshot.docs.map((doc) => doc.data() )
+    return filteredMessage;
   };
   const sendMessage = (e) => {
     e.preventDefault();
@@ -82,9 +73,9 @@ const ChatScreen = ({ users, messages }) => {
         </HeaderIcons>
       </Header>
       <MessageContainer>
-        {messages ? (
+        {messagesSnapshot ? (
           showMessages().map((msg) => (
-            <Message message={msg.message} key={uuid} />
+            <Message message={msg.message} key={uuid()} />
           ))
         ) : (
           <CircularProgress />
