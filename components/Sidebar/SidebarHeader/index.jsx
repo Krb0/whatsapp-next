@@ -31,7 +31,7 @@ const Header = styled.div`
   align-items: center;
   padding: 15px;
   height: 80px;
-  border-bottom: 1px solid whitesmoke;
+  border-bottom: 1px solid #f0f0f0;
 `;
 
 const UserAvatar = styled(Avatar)`

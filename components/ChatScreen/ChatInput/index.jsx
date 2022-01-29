@@ -7,7 +7,7 @@ import MicIcon from "@mui/icons-material/Mic";
 import IconButton from "@mui/material/IconButton";
 import { sendMessage } from "../../../firebase";
 
-const ChatInput = ({id}) => {
+const ChatInput = ({ id }) => {
   const [input, setInput] = useState("");
   const [user] = useAuthState(auth);
   return (
