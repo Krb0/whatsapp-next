@@ -1,16 +1,16 @@
 import React from "react";
 import styled from "styled-components";
 import Head from "next/head";
-import Router from "next/router";
+
 import Sidebar from "../../components/Sidebar";
 import ChatScreen from "../../components/ChatScreen";
 import { collection, getDoc, getDocs, doc } from "firebase/firestore";
 import { db, auth } from "../../firebase";
-import { getAuth } from "firebase/auth";
+
 import CircularProgress from "@mui/material/CircularProgress";
 import { useAuthState } from "react-firebase-hooks/auth";
 import getRecipientEmail from "../../utils/getRecipientEmail";
-import { ConstructionOutlined, Route } from "@mui/icons-material";
+
 
 const Chat = ({ messages, chat }) => {
   const { users } = JSON.parse(chat);

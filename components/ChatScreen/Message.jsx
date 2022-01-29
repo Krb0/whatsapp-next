@@ -1,26 +1,58 @@
 import React from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
 import styled from "styled-components";
-const Message = ({ user, message }) => {
+import { auth } from "../../firebase";
+import moment from 'moment';
+const Message = ({ author, message, timestamp }) => {
+  const [userLoggedIn] = useAuthState(auth);
+
+  const TypeOfMessage = author === userLoggedIn.email ? Sender : Receiver;
   return (
     <Container>
-      <p>{message}</p>
+      <TypeOfMessage>
+        {message}
+        <Timestamp>
+
+        {timestamp ? moment(timestamp).format("LT") : "..."}
+        </Timestamp>
+      </TypeOfMessage>
     </Container>
   );
 };
 
 export default Message;
 const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  p {
-    background-color: #e9eaeb;
-    min-width: 200px;
-    max-width: 400px;
-    min-height: 30px;
-    max-height: 200px;
-    word-wrap: break-word;
-    padding: 1rem;
-    border-radius: 9px;
-    align-self: flex-end;
-  }
+  
 `;
+
+const MessageElement = styled.p`
+  width: fit-content;
+  padding:15px;
+  border-radius: 8px;
+  margin: 10px;
+  min-width: 80px;
+  max-width: 400px;
+  word-wrap:break-word;
+  max-height: 800px;
+  padding-bottom: 26px;
+  position:relative;
+  text-align: right;
+`
+const Sender = styled(MessageElement)`
+  margin-left: auto;
+  background-color: #dcf8c6;
+
+`;
+const Receiver = styled(MessageElement)`
+  background-color: whitesmoke;
+  text-align: left;
+`;
+const Timestamp = styled.span`
+  color:gray;
+  padding:10px;
+  font-size: 12px;
+  position:absolute;
+  bottom:0;
+  text-align:right;
+  right:0;
+  `

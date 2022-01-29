@@ -18,7 +18,7 @@ const Sidebar = () => {
   const chatCollectionRef = collection(db, "chats");
   const filteredChats = query(
     chatCollectionRef,
-    where("users", "array-contains", user.email)
+    where("users", "array-contains", user?.email)
   );
   const [chatsSnapshot] = useCollection(filteredChats);
   const createChat = async () => {

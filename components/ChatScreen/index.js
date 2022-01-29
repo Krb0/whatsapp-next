@@ -1,47 +1,62 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/router";
+// import components
+import Message from "./Message";
+import Loading from '../Loading';
 import styled from "styled-components";
+import getRecipientEmail from "../../utils/getRecipientEmail";
 import { v4 as uuid } from "uuid";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, db } from "../../firebase";
-
+import { auth, db, messagesQuery } from "../../firebase";
 import {
+  serverTimestamp,
   collection,
   query,
   orderBy,
   setDoc,
   addDoc,
+  where,
   doc,
 } from "firebase/firestore";
-import { useRouter } from "next/router";
 import { useCollection } from "react-firebase-hooks/firestore";
+// Import materialUI stuff
 import { Avatar } from "@mui/material";
-import CircularProgress from "@mui/material/CircularProgress";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import IconButton from "@mui/material/IconButton";
-import getRecipientEmail from "../../utils/getRecipientEmail";
 import InsertEmoticonIcon from "@mui/icons-material/InsertEmoticon";
 import MicIcon from "@mui/icons-material/Mic";
-import Message from "./Message";
-import { serverTimestamp } from "firebase/firestore";
+
+import TimeAgo from 'timeago-react';
+
+
 
 const ChatScreen = ({ users, messages }) => {
   const [input, setInput] = useState("");
   const router = useRouter();
   const { id } = router.query;
   const [user] = useAuthState(auth);
-  const messagesCollection = collection(db, `chats/${id}/messages`);
-  const orderedMessages = query(
-    messagesCollection,
-    orderBy("timestamp", "asc")
-  );
-  const [messagesSnapshot] = useCollection(orderedMessages);
+  const endOfMessageRef = useRef(null)
+
+  const [messagesSnapshot] = useCollection(messagesQuery);
   const recipientEmail = getRecipientEmail(users, user);
   const letterCount = input.length;
   const showMessages = () => {
-    const filteredMessage = messagesSnapshot.docs.map((doc) => doc.data() )
+    const filteredMessage = messagesSnapshot.docs.map((doc) => {return {message: doc.data().message, timestamp: doc.data().timestamp, author: doc.data().user}});
     return filteredMessage;
   };
+  const usersCollection = collection(db, "users");
+  const [recipientQuery] = useCollection(
+    query(
+      usersCollection,
+      where("email", "==", recipientEmail)
+    ))
+  
+  const recipient = recipientQuery?.docs?.[0]?.data();
+  const scollToBottom = () => {
+    endOfMessageRef.current.scrollIntoView({behavior: "smooth", block: "start"})
+  }
+  useEffect(() => {scollToBottom()}, [messagesSnapshot])
   const sendMessage = (e) => {
     e.preventDefault();
     const userRef = doc(db, "users", user.uid);
@@ -53,15 +68,33 @@ const ChatScreen = ({ users, messages }) => {
       user: user.email,
       photoURL: user.photoURL,
     });
+    
     setInput("");
+    scollToBottom();
   };
   return (
     <Container>
       <Header>
-        <Avatar src={recipientEmail.photoURL} />
+        {recipient ? (
+          <Avatar src={recipient?.photoURL} />
+        ) : (
+          <Avatar>{recipientEmail[0]}</Avatar>
+        )}
+
         <HeaderInformation>
           <h3>{recipientEmail}</h3>
-          <p>Last Seen</p>
+          {recipientQuery ? (
+            <p>
+              Last Seen:{" "}
+              {recipient?.lastSeen?.toDate() ? (
+                <TimeAgo datetime={recipient?.lastSeen?.toDate()} />
+              ) : (
+                "Unavailable"
+              )}{" "}
+            </p>
+          ) : (
+            <p>Loading...</p>
+          )}
         </HeaderInformation>
         <HeaderIcons>
           <IconButton>
@@ -75,18 +108,26 @@ const ChatScreen = ({ users, messages }) => {
       <MessageContainer>
         {messagesSnapshot ? (
           showMessages().map((msg) => (
-            <Message message={msg.message} key={uuid()} />
+            <Message
+              {...msg}
+              timestamp={msg?.timestamp?.toDate()}
+              key={uuid()}
+            />
           ))
         ) : (
-          <CircularProgress />
+          <Loading />
         )}
-        <EndOfMessage />
+        <EndOfMessage ref={endOfMessageRef} />
       </MessageContainer>
       <InputContainer>
         <IconButton>
           <InsertEmoticonIcon />
         </IconButton>
-        <Input value={input} onChange={(e) => setInput(e.target.value)} />
+        <Input
+          value={input}
+          maxLength={250}
+          onChange={(e) => setInput(e.target.value)}
+        />
         <button hidden disabled={!input} type="submit" onClick={sendMessage}>
           Send Message
         </button>
@@ -101,7 +142,12 @@ const ChatScreen = ({ users, messages }) => {
 
 export default ChatScreen;
 
-const Container = styled.div``;
+const Container = styled.div`
+> svg{
+  position: absolute;
+  top:20px;
+}
+`;
 
 const Header = styled.div`
   position: sticky;
