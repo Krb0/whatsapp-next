@@ -35,7 +35,7 @@ export async function getServerSideProps(context) {
   return {
     props: {
       chat: JSON.stringify(chat.data()),
-      messages: messages.docs.map((doc) => doc.data()),
+      messages: JSON.stringify(messages.docs.map((doc) => doc.data())),
     },
   };
 }
